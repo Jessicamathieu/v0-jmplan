@@ -1,279 +1,181 @@
-/**
- * Tests unitaires pour le module d'import Excel
- * Vérifie la validation, la transformation et l'import des données
- */
+import { describe, it, expect, beforeEach, jest } from "@jest/globals"
+import { parseFile, detectColumns, importClients, CLIENT_COLUMNS } from "@/lib/excel-import"
 
-import {
-  parseFile,
-  detectColumns,
-  validateQuebecPhone,
-  formatQuebecPhone,
-  validateCanadianPostalCode,
-  formatCanadianPostalCode,
-  CLIENT_COLUMNS,
-  SERVICE_COLUMNS,
-} from "@/lib/excel-import"
-import { TestDataGenerator } from "@/lib/test-utils"
+// Mock des dépendances
+jest.mock("@/lib/database", () => ({
+  DatabaseService: {
+    batchInsertClients: jest.fn(),
+    batchInsertServices: jest.fn(),
+  },
+}))
 
-describe("Excel Import Module", () => {
+describe("Excel Import", () => {
   beforeEach(() => {
-    TestDataGenerator.reset()
+    jest.clearAllMocks()
   })
 
-  describe("Phone Validation", () => {
-    test("validates Quebec phone numbers correctly", () => {
-      expect(validateQuebecPhone("514-555-0123")).toBe(true)
-      expect(validateQuebecPhone("(514) 555-0123")).toBe(true)
-      expect(validateQuebecPhone("514.555.0123")).toBe(true)
-      expect(validateQuebecPhone("5145550123")).toBe(true)
-      expect(validateQuebecPhone("+1-514-555-0123")).toBe(true)
+  describe("parseFile", () => {
+    it("should parse CSV file correctly", async () => {
+      const csvContent = "nom,prenom,email\nDupont,Marie,marie@test.com\nMartin,Jean,jean@test.com"
+      const file = new File([csvContent], "test.csv", { type: "text/csv" })
 
-      // Invalid formats
-      expect(validateQuebecPhone("123-456")).toBe(false)
-      expect(validateQuebecPhone("abc-def-ghij")).toBe(false)
-      expect(validateQuebecPhone("")).toBe(true) // Optional field
+      const result = await parseFile(file)
+
+      expect(result).toHaveLength(3) // Header + 2 data rows
+      expect(result[0]).toEqual(["nom", "prenom", "email"])
+      expect(result[1]).toEqual(["Dupont", "Marie", "marie@test.com"])
+      expect(result[2]).toEqual(["Martin", "Jean", "jean@test.com"])
     })
 
-    test("formats Quebec phone numbers correctly", () => {
-      expect(formatQuebecPhone("5145550123")).toBe("514-555-0123")
-      expect(formatQuebecPhone("(514) 555-0123")).toBe("514-555-0123")
-      expect(formatQuebecPhone("514.555.0123")).toBe("514-555-0123")
-      expect(formatQuebecPhone("+1-514-555-0123")).toBe("514-555-0123")
-      expect(formatQuebecPhone("invalid")).toBe("invalid")
-    })
-  })
+    it("should handle empty CSV file", async () => {
+      const file = new File([""], "empty.csv", { type: "text/csv" })
 
-  describe("Postal Code Validation", () => {
-    test("validates Canadian postal codes correctly", () => {
-      expect(validateCanadianPostalCode("H2X 1Y2")).toBe(true)
-      expect(validateCanadianPostalCode("H2X1Y2")).toBe(true)
-      expect(validateCanadianPostalCode("h2x 1y2")).toBe(true)
-      expect(validateCanadianPostalCode("G1R-2J5")).toBe(true)
-
-      // Invalid formats
-      expect(validateCanadianPostalCode("12345")).toBe(false)
-      expect(validateCanadianPostalCode("ABC DEF")).toBe(false)
-      expect(validateCanadianPostalCode("")).toBe(true) // Optional field
+      await expect(parseFile(file)).rejects.toThrow("Fichier vide ou invalide")
     })
 
-    test("formats Canadian postal codes correctly", () => {
-      expect(formatCanadianPostalCode("h2x1y2")).toBe("H2X 1Y2")
-      expect(formatCanadianPostalCode("H2X-1Y2")).toBe("H2X 1Y2")
-      expect(formatCanadianPostalCode("H2X 1Y2")).toBe("H2X 1Y2")
-      expect(formatCanadianPostalCode("invalid")).toBe("INVALID")
+    it("should handle invalid file format", async () => {
+      const file = new File(["invalid content"], "test.txt", { type: "text/plain" })
+
+      await expect(parseFile(file)).rejects.toThrow("Format de fichier non supporté")
     })
   })
 
-  describe("Column Detection", () => {
-    test("detects client columns correctly", () => {
-      const testData = [
-        ["Prénom", "Nom de famille", "Adresse email", "Téléphone", "Code postal"],
-        ["Jean", "Dupont", "jean@test.com", "514-555-0123", "H2X 1Y2"],
+  describe("detectColumns", () => {
+    it("should detect columns correctly", () => {
+      const data = [
+        ["Nom", "Prénom", "Email", "Téléphone"],
+        ["Dupont", "Marie", "marie@test.com", "514-555-0001"],
       ]
 
-      const mapping = detectColumns(testData, CLIENT_COLUMNS)
+      const mapping = detectColumns(data, CLIENT_COLUMNS)
 
-      expect(mapping.firstName).toBe("Prénom")
-      expect(mapping.lastName).toBe("Nom de famille")
-      expect(mapping.email).toBe("Adresse email")
-      expect(mapping.phone).toBe("Téléphone")
-      expect(mapping.postalCode).toBe("Code postal")
+      expect(mapping.nom).toBe("Nom")
+      expect(mapping.prenom).toBe("Prénom")
+      expect(mapping.email).toBe("Email")
+      expect(mapping.telephone).toBe("Téléphone")
     })
 
-    test("handles partial column matches", () => {
-      const testData = [
-        ["nom", "email", "tel"],
-        ["Dupont", "jean@test.com", "514-555-0123"],
+    it("should handle case insensitive detection", () => {
+      const data = [
+        ["NOM", "PRENOM", "EMAIL"],
+        ["Dupont", "Marie", "marie@test.com"],
       ]
 
-      const mapping = detectColumns(testData, CLIENT_COLUMNS)
+      const mapping = detectColumns(data, CLIENT_COLUMNS)
 
-      expect(mapping.lastName).toBe("nom")
-      expect(mapping.email).toBe("email")
-      expect(mapping.phone).toBe("tel")
+      expect(mapping.nom).toBe("NOM")
+      expect(mapping.prenom).toBe("PRENOM")
+      expect(mapping.email).toBe("EMAIL")
+    })
+
+    it("should handle partial column detection", () => {
+      const data = [
+        ["Nom Client", "Prénom Client"],
+        ["Dupont", "Marie"],
+      ]
+
+      const mapping = detectColumns(data, CLIENT_COLUMNS)
+
+      expect(mapping.nom).toBe("Nom Client")
+      expect(mapping.prenom).toBe("Prénom Client")
+      expect(mapping.email).toBeUndefined()
     })
   })
 
-  describe("File Parsing", () => {
-    test("parses CSV files correctly", async () => {
-      const csvFile = TestDataGenerator.generateExcelFile(
-        [
-          ["Prénom", "Nom", "Email"],
-          ["Jean", "Dupont", "jean@test.com"],
-          ["Marie", "Martin", "marie@test.com"],
-        ],
-        "test.csv",
-      )
+  describe("importClients", () => {
+    it("should import clients successfully", async () => {
+      const data = [
+        ["nom", "prenom", "email"],
+        ["Dupont", "Marie", "marie@test.com"],
+        ["Martin", "Jean", "jean@test.com"],
+      ]
 
-      const result = await parseFile(csvFile)
-
-      expect(result).toHaveLength(3)
-      expect(result[0]).toEqual(["Prénom", "Nom", "Email"])
-      expect(result[1]).toEqual(["Jean", "Dupont", "jean@test.com"])
-      expect(result[2]).toEqual(["Marie", "Martin", "marie@test.com"])
-    })
-
-    test("handles empty rows correctly", async () => {
-      const csvFile = TestDataGenerator.generateExcelFile(
-        [
-          ["Prénom", "Nom"],
-          ["Jean", "Dupont"],
-          ["", ""], // Empty row should be filtered
-          ["Marie", "Martin"],
-        ],
-        "test.csv",
-      )
-
-      const result = await parseFile(csvFile)
-
-      expect(result).toHaveLength(3) // Empty row filtered out
-    })
-  })
-
-  describe("Data Validation", () => {
-    test("validates client data correctly", () => {
-      const validClient = {
-        firstName: "Jean",
-        lastName: "Dupont",
-        email: "jean@test.com",
-        phone: "514-555-0123",
-        postalCode: "H2X 1Y2",
+      const mapping = {
+        nom: "nom",
+        prenom: "prenom",
+        email: "email",
       }
 
-      CLIENT_COLUMNS.forEach((column) => {
-        const value = validClient[column.key as keyof typeof validClient]
-        if (value && column.validation) {
-          expect(column.validation(value)).toBe(true)
-        }
-      })
+      const mockInsert = jest.fn().mockResolvedValue([
+        { id: 1, nom: "Dupont", prenom: "Marie", email: "marie@test.com" },
+        { id: 2, nom: "Martin", prenom: "Jean", email: "jean@test.com" },
+      ])
+
+      const { DatabaseService } = await import("@/lib/database")
+      ;(DatabaseService.batchInsertClients as jest.Mock).mockImplementation(mockInsert)
+
+      const result = await importClients(data, mapping, true)
+
+      expect(result.success).toBe(true)
+      expect(result.imported).toBe(2)
+      expect(result.errors).toHaveLength(0)
+      expect(mockInsert).toHaveBeenCalledWith([
+        { nom: "Dupont", prenom: "Marie", email: "marie@test.com" },
+        { nom: "Martin", prenom: "Jean", email: "jean@test.com" },
+      ])
     })
 
-    test("rejects invalid client data", () => {
-      const invalidClient = {
-        firstName: "", // Required field empty
-        lastName: "Dupont",
-        email: "invalid-email", // Invalid email
-        phone: "123", // Invalid phone
-        postalCode: "12345", // Invalid postal code
+    it("should validate required fields", async () => {
+      const data = [
+        ["nom", "prenom", "email"],
+        ["", "Marie", "marie@test.com"], // Nom manquant
+        ["Martin", "", "jean@test.com"], // Prénom manquant
+      ]
+
+      const mapping = {
+        nom: "nom",
+        prenom: "prenom",
+        email: "email",
       }
 
-      const firstNameColumn = CLIENT_COLUMNS.find((col) => col.key === "firstName")
-      const emailColumn = CLIENT_COLUMNS.find((col) => col.key === "email")
-      const phoneColumn = CLIENT_COLUMNS.find((col) => col.key === "phone")
-      const postalCodeColumn = CLIENT_COLUMNS.find((col) => col.key === "postalCode")
+      const result = await importClients(data, mapping, true)
 
-      expect(firstNameColumn?.validation?.(invalidClient.firstName)).toBe(false)
-      expect(emailColumn?.validation?.(invalidClient.email)).toBe(false)
-      expect(phoneColumn?.validation?.(invalidClient.phone)).toBe(false)
-      expect(postalCodeColumn?.validation?.(invalidClient.postalCode)).toBe(false)
+      expect(result.success).toBe(false)
+      expect(result.imported).toBe(0)
+      expect(result.errors).toContain("Ligne 2: Nom requis")
+      expect(result.errors).toContain("Ligne 3: Prénom requis")
     })
-  })
 
-  describe("Data Transformation", () => {
-    test("transforms client data correctly", () => {
-      const rawData = {
-        firstName: "  Jean  ",
-        lastName: "  DUPONT  ",
-        email: "  JEAN@TEST.COM  ",
-        phone: "(514) 555-0123",
-        postalCode: "h2x1y2",
+    it("should validate email format", async () => {
+      const data = [
+        ["nom", "prenom", "email"],
+        ["Dupont", "Marie", "invalid-email"],
+      ]
+
+      const mapping = {
+        nom: "nom",
+        prenom: "prenom",
+        email: "email",
       }
 
-      CLIENT_COLUMNS.forEach((column) => {
-        const value = rawData[column.key as keyof typeof rawData]
-        if (value && column.transform) {
-          const transformed = column.transform(value)
+      const mockInsert = jest.fn().mockResolvedValue([{ id: 1, nom: "Dupont", prenom: "Marie", email: null }])
 
-          switch (column.key) {
-            case "firstName":
-              expect(transformed).toBe("Jean")
-              break
-            case "lastName":
-              expect(transformed).toBe("DUPONT")
-              break
-            case "email":
-              expect(transformed).toBe("jean@test.com")
-              break
-            case "phone":
-              expect(transformed).toBe("514-555-0123")
-              break
-            case "postalCode":
-              expect(transformed).toBe("H2X 1Y2")
-              break
-          }
-        }
-      })
+      const { DatabaseService } = await import("@/lib/database")
+      ;(DatabaseService.batchInsertClients as jest.Mock).mockImplementation(mockInsert)
+
+      const result = await importClients(data, mapping, true)
+
+      expect(result.success).toBe(true)
+      expect(result.warnings).toContain("Ligne 2: Email invalide (invalid-email)")
     })
-  })
 
-  describe("Service Validation", () => {
-    test("validates service data correctly", () => {
-      const validService = {
-        name: "Consultation Premium",
-        duration: "60",
-        price: "125.00",
-        color: "#E91E63",
+    it("should handle database errors", async () => {
+      const data = [
+        ["nom", "prenom"],
+        ["Dupont", "Marie"],
+      ]
+
+      const mapping = {
+        nom: "nom",
+        prenom: "prenom",
       }
 
-      SERVICE_COLUMNS.forEach((column) => {
-        const value = validService[column.key as keyof typeof validService]
-        if (value && column.validation) {
-          expect(column.validation(value)).toBe(true)
-        }
-      })
-    })
+      const mockInsert = jest.fn().mockRejectedValue(new Error("Database error"))
 
-    test("rejects invalid service data", () => {
-      const invalidService = {
-        name: "AB", // Too short
-        duration: "0", // Invalid duration
-        price: "-10", // Negative price
-        color: "invalid-color", // Invalid hex color
-      }
+      const { DatabaseService } = await import("@/lib/database")
+      ;(DatabaseService.batchInsertClients as jest.Mock).mockImplementation(mockInsert)
 
-      const nameColumn = SERVICE_COLUMNS.find((col) => col.key === "name")
-      const durationColumn = SERVICE_COLUMNS.find((col) => col.key === "duration")
-      const priceColumn = SERVICE_COLUMNS.find((col) => col.key === "price")
-      const colorColumn = SERVICE_COLUMNS.find((col) => col.key === "color")
-
-      expect(nameColumn?.validation?.(invalidService.name)).toBe(false)
-      expect(durationColumn?.validation?.(invalidService.duration)).toBe(false)
-      expect(priceColumn?.validation?.(invalidService.price)).toBe(false)
-      expect(colorColumn?.validation?.(invalidService.color)).toBe(false)
-    })
-  })
-
-  describe("Performance Tests", () => {
-    test("handles large datasets efficiently", async () => {
-      // Generate large dataset
-      const largeData = [["Prénom", "Nom", "Email"]]
-      for (let i = 0; i < 10000; i++) {
-        largeData.push([`Prénom${i}`, `Nom${i}`, `test${i}@example.com`])
-      }
-
-      const startTime = performance.now()
-      const csvFile = TestDataGenerator.generateExcelFile(largeData)
-      const result = await parseFile(csvFile)
-      const endTime = performance.now()
-
-      expect(result).toHaveLength(10001) // Header + 10000 rows
-      expect(endTime - startTime).toBeLessThan(5000) // Should complete in under 5 seconds
-    })
-  })
-
-  describe("Error Handling", () => {
-    test("handles corrupted files gracefully", async () => {
-      const corruptedFile = new File(["invalid content"], "corrupted.xlsx", {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      })
-
-      await expect(parseFile(corruptedFile)).rejects.toThrow()
-    })
-
-    test("handles unsupported file formats", async () => {
-      const unsupportedFile = new File(["content"], "test.txt", { type: "text/plain" })
-
-      await expect(parseFile(unsupportedFile)).rejects.toThrow("Format de fichier non supporté")
+      await expect(importClients(data, mapping, true)).rejects.toThrow("Database error")
     })
   })
 })

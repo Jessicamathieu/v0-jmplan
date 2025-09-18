@@ -18,7 +18,9 @@ export type Database = {
           telephone: string | null
           adresse: string | null
           date_naissance: string | null
+          notes: string | null
           points_fidelite: number
+          actif: boolean
           created_at: string
           updated_at: string
         }
@@ -29,7 +31,9 @@ export type Database = {
           telephone?: string | null
           adresse?: string | null
           date_naissance?: string | null
+          notes?: string | null
           points_fidelite?: number
+          actif?: boolean
         }
         Update: {
           nom?: string
@@ -38,7 +42,9 @@ export type Database = {
           telephone?: string | null
           adresse?: string | null
           date_naissance?: string | null
+          notes?: string | null
           points_fidelite?: number
+          actif?: boolean
         }
       }
       services: {
@@ -48,6 +54,7 @@ export type Database = {
           description: string | null
           prix: number
           duree: number
+          couleur: string
           actif: boolean
           created_at: string
           updated_at: string
@@ -57,6 +64,7 @@ export type Database = {
           description?: string | null
           prix: number
           duree: number
+          couleur?: string
           actif?: boolean
         }
         Update: {
@@ -64,6 +72,59 @@ export type Database = {
           description?: string | null
           prix?: number
           duree?: number
+          couleur?: string
+          actif?: boolean
+        }
+      }
+      employes: {
+        Row: {
+          id: number
+          nom: string
+          prenom: string
+          email: string
+          telephone: string | null
+          specialites: string[]
+          actif: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          nom: string
+          prenom: string
+          email: string
+          telephone?: string | null
+          specialites?: string[]
+          actif?: boolean
+        }
+        Update: {
+          nom?: string
+          prenom?: string
+          email?: string
+          telephone?: string | null
+          specialites?: string[]
+          actif?: boolean
+        }
+      }
+      salles: {
+        Row: {
+          id: number
+          nom: string
+          capacite: number
+          equipements: string[]
+          actif: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          nom: string
+          capacite?: number
+          equipements?: string[]
+          actif?: boolean
+        }
+        Update: {
+          nom?: string
+          capacite?: number
+          equipements?: string[]
           actif?: boolean
         }
       }
@@ -73,11 +134,15 @@ export type Database = {
           client_id: number
           service_id: number
           employe_id: number | null
+          salle_id: number | null
           date_heure: string
           duree: number
           statut: string
           notes: string | null
           prix: number | null
+          google_event_id: string | null
+          rappel_envoye: boolean
+          confirmation_envoyee: boolean
           created_at: string
           updated_at: string
         }
@@ -85,21 +150,55 @@ export type Database = {
           client_id: number
           service_id: number
           employe_id?: number | null
+          salle_id?: number | null
           date_heure: string
           duree: number
           statut?: string
           notes?: string | null
           prix?: number | null
+          google_event_id?: string | null
+          rappel_envoye?: boolean
+          confirmation_envoyee?: boolean
         }
         Update: {
           client_id?: number
           service_id?: number
           employe_id?: number | null
+          salle_id?: number | null
           date_heure?: string
           duree?: number
           statut?: string
           notes?: string | null
           prix?: number | null
+          google_event_id?: string | null
+          rappel_envoye?: boolean
+          confirmation_envoyee?: boolean
+        }
+      }
+      google_tokens: {
+        Row: {
+          id: number
+          user_id: string
+          access_token: string
+          refresh_token: string | null
+          expires_at: string
+          scope: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          access_token: string
+          refresh_token?: string | null
+          expires_at: string
+          scope: string
+        }
+        Update: {
+          user_id?: string
+          access_token?: string
+          refresh_token?: string | null
+          expires_at?: string
+          scope?: string
         }
       }
     }
