@@ -15,7 +15,15 @@ export default function DashboardPage() {
     const fetchStats = async () => {
       try {
         const data = await getDashboardStats()
-        setStats(data)
+        // 🔒 Sécuriser les valeurs avec des fallback par défaut
+        setStats({
+          totalClients: data?.totalClients ?? 0,
+          totalAppointments: data?.totalAppointments ?? 0,
+          totalRevenue: data?.totalRevenue ?? 0,
+          pendingAppointments: data?.pendingAppointments ?? 0,
+          completedTasks: data?.completedTasks ?? 0,
+          totalExpenses: data?.totalExpenses ?? 0,
+        })
       } catch (error) {
         console.error("Erreur lors du chargement des statistiques:", error)
       } finally {
@@ -45,7 +53,7 @@ export default function DashboardPage() {
   const statCards = [
     {
       title: "Total Clients",
-      value: stats?.totalClients ?? 0,
+      value: stats.totalClients,
       icon: Users,
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
@@ -53,7 +61,7 @@ export default function DashboardPage() {
     },
     {
       title: "Rendez-vous",
-      value: stats?.totalAppointments ?? 0,
+      value: stats.totalAppointments,
       icon: Calendar,
       color: "from-green-500 to-green-600",
       bgColor: "bg-green-50",
@@ -61,7 +69,7 @@ export default function DashboardPage() {
     },
     {
       title: "Revenus",
-      value: `${stats?.totalRevenue ?? 0}€`,
+      value: `${stats.totalRevenue}€`,
       icon: DollarSign,
       color: "from-primary to-secondary",
       bgColor: "bg-pink-50",
@@ -69,7 +77,7 @@ export default function DashboardPage() {
     },
     {
       title: "En Attente",
-      value: stats?.pendingAppointments ?? 0,
+      value: stats.pendingAppointments,
       icon: Clock,
       color: "from-yellow-500 to-yellow-600",
       bgColor: "bg-yellow-50",
@@ -77,7 +85,7 @@ export default function DashboardPage() {
     },
     {
       title: "Tâches Terminées",
-      value: stats?.completedTasks ?? 0,
+      value: stats.completedTasks,
       icon: CheckCircle,
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
@@ -85,7 +93,7 @@ export default function DashboardPage() {
     },
     {
       title: "Dépenses",
-      value: `${stats?.totalExpenses ?? 0}€`,
+      value: `${stats.totalExpenses}€`,
       icon: Receipt,
       color: "from-red-500 to-red-600",
       bgColor: "bg-red-50",
