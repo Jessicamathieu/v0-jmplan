@@ -1,3 +1,4 @@
+import { importExcel, importCSV, exportExcel, exportCSV } from "@/lib/excel"
 "use client"
 
 import { useState, useEffect } from "react"
@@ -281,6 +282,12 @@ export default function DonneesPage() {
             <Card className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-primary">Liste des produits</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => exportCSV(filteredProducts, "produits.csv")}>CSV</Button>
+                  <Button variant="outline" size="sm" onClick={() => exportExcel(filteredProducts, "produits.xlsx")}>Excel</Button>
+                  <input type="file" accept=".csv" onChange={(e) => e.target.files && importCSV(e.target.files[0]).then(console.log)} />
+                  <input type="file" accept=".xlsx" onChange={(e) => e.target.files && importExcel(e.target.files[0]).then(console.log)} />
+                </div>
                 <Button variant="outline" size="sm" onClick={() => exportToCSV("products")} className="premium-button">
                   <Download className="mr-2 h-4 w-4" />
                   Exporter CSV
@@ -333,6 +340,12 @@ export default function DonneesPage() {
             <Card className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-primary">Liste des services</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => exportCSV(filteredServices, "services.csv")}>CSV</Button>
+                  <Button variant="outline" size="sm" onClick={() => exportExcel(filteredServices, "services.xlsx")}>Excel</Button>
+                  <input type="file" accept=".csv" onChange={(e) => e.target.files && importCSV(e.target.files[0]).then(console.log)} />
+                  <input type="file" accept=".xlsx" onChange={(e) => e.target.files && importExcel(e.target.files[0]).then(console.log)} />
+                </div>
                 <Button variant="outline" size="sm" onClick={() => exportToCSV("services")} className="premium-button">
                   <Download className="mr-2 h-4 w-4" />
                   Exporter CSV
