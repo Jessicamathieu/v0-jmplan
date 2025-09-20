@@ -63,30 +63,16 @@ Object.defineProperty(window, "matchMedia", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  observe() {
-    return null
-  }
-  disconnect() {
-    return null
-  }
-  unobserve() {
-    return null
-  }
+  observe() { return null }
+  disconnect() { return null }
+  unobserve() { return null }
 }
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  observe() {
-    return null
-  }
-  disconnect() {
-    return null
-  }
-  unobserve() {
-    return null
-  }
+  observe() { return null }
+  disconnect() { return null }
+  unobserve() { return null }
 }
 
 // Mock localStorage
@@ -101,20 +87,16 @@ global.localStorage = localStorageMock
 // Mock fetch
 global.fetch = jest.fn()
 
-// Setup console error suppression for expected errors in tests
+// Silence warnings spécifiques
 const originalError = console.error
-const beforeAll = global.beforeAll
-const afterAll = global.afterAll
-
 beforeAll(() => {
   console.error = (...args) => {
-    if (typeof args[0] === "string" && args[0].includes("Warning: ReactDOM.render is no longer supported")) {
+    if (typeof args[0] === "string" && args[0].includes("ReactDOM.render is no longer supported")) {
       return
     }
     originalError.call(console, ...args)
   }
 })
-
 afterAll(() => {
   console.error = originalError
 })

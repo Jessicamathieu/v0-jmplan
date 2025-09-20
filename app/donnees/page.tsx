@@ -136,16 +136,6 @@ export default function DonneesPage() {
     return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(price)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-CA", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
   const exportToCSV = (type: "products" | "services") => {
     if (!data) return
 
@@ -232,34 +222,6 @@ export default function DonneesPage() {
           <p className="text-gray-600">Centre de données et analytics avancés</p>
         </div>
 
-        {/* Coming Soon */}
-        <Card className="border-0 shadow-lg bg-white mb-8">
-          <CardContent className="p-12 text-center">
-            <Database className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Analytics Premium</h3>
-            <p className="text-gray-600 mb-6">
-              Centre de données complet avec analytics avancés et rapports détaillés.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-              <div className="p-4 bg-primary/5 rounded-lg">
-                <BarChart3 className="h-8 w-8 text-primary mx-auto mb-2" />
-                <h4 className="font-semibold text-primary">Tableaux de bord</h4>
-                <p className="text-sm text-gray-600">Visualisations interactives</p>
-              </div>
-              <div className="p-4 bg-secondary/5 rounded-lg">
-                <Download className="h-8 w-8 text-secondary mx-auto mb-2" />
-                <h4 className="font-semibold text-secondary">Export de données</h4>
-                <p className="text-sm text-gray-600">Formats multiples disponibles</p>
-              </div>
-              <div className="p-4 bg-green-500/5 rounded-lg">
-                <Upload className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-green-600">Import en masse</h4>
-                <p className="text-sm text-gray-600">Synchronisation automatique</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Tabs */}
         <Tabs defaultValue="products" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 premium-card">
@@ -267,16 +229,17 @@ export default function DonneesPage() {
               value="products"
               className="data-[state=active]:premium-gradient data-[state=active]:text-white"
             >
-              Produits {data?.products.length ? `(${data.products.length})` : ""}
+              Produits {Array.isArray(data?.products) ? `(${data.products.length})` : ""}
             </TabsTrigger>
             <TabsTrigger
               value="services"
               className="data-[state=active]:premium-gradient data-[state=active]:text-white"
             >
-              Services {data?.services.length ? `(${data.services.length})` : ""}
+              Services {Array.isArray(data?.services) ? `(${data.services.length})` : ""}
             </TabsTrigger>
           </TabsList>
 
+          {/* Produits */}
           <TabsContent value="products" className="mt-6">
             <Card className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -329,6 +292,7 @@ export default function DonneesPage() {
             </Card>
           </TabsContent>
 
+          {/* Services */}
           <TabsContent value="services" className="mt-6">
             <Card className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
