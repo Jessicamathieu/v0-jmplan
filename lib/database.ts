@@ -1,7 +1,10 @@
 import { supabase } from "./supabase"
 import type { Database } from "./supabase"
 
-// Re-export supabase client for other modules
+copilot/vscode1758422801650
+Re-export supabase client for other modules
+Export supabase client for direct use
+main
 export { supabase }
 
 // Types pour les tables
