@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
-// import { Inter } from "next/font/google"
+// import { Inter } from "next/font/google" // Temporarily disabled due to network restrictions in build environment
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Sidebar } from "@/components/sidebar"
 import { Toaster } from "@/components/ui/toaster"
 
-// const inter = Inter({ subsets: ["latin"] })
+// const inter = Inter({ subsets: ["latin"] }) // Restore when Google Fonts access is available
 
 export const metadata: Metadata = {
   title: "JM Plan - Gestion de Planning",
@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className="">{/* {inter.className} */}
+      <body className="">{/* inter.className - restore when Google Fonts available */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="flex h-screen bg-gray-50">
             <Sidebar />
