@@ -1,206 +1,78 @@
-import { createClient } from "@supabase/supabase-js"
+// SQL schema for Supabase tables
+export const supabaseSchema = `
+-- Table: clients
+create table if not exists clients (
+  id serial primary key,
+  nom text not null,
+  adresse text,
+  ville text,
+  province text,
+  codepostal text,
+  telephone text,
+  courriel text,
+  actif boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+-- Table: employes
+create table if not exists employes (
+  id serial primary key,
+  nom_employe text not null,
+  initiales text,
+  couleur_secondaire text,
+  actif boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+-- Table: salles
+create table if not exists salles (
+  id serial primary key,
+  description text,
+  actif boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
 
-// Types pour la base de données
-export type Database = {
-  public: {
-    Tables: {
-      clients: {
-        Row: {
-          id: number
-          nom: string
-          prenom: string
-          email: string | null
-          telephone: string | null
-          adresse: string | null
-          date_naissance: string | null
-          notes: string | null
-          points_fidelite: number
-          actif: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          nom: string
-          prenom: string
-          email?: string | null
-          telephone?: string | null
-          adresse?: string | null
-          date_naissance?: string | null
-          notes?: string | null
-          points_fidelite?: number
-          actif?: boolean
-        }
-        Update: {
-          nom?: string
-          prenom?: string
-          email?: string | null
-          telephone?: string | null
-          adresse?: string | null
-          date_naissance?: string | null
-          notes?: string | null
-          points_fidelite?: number
-          actif?: boolean
-        }
-      }
-      services: {
-        Row: {
-          id: number
-          nom: string
-          description: string | null
-          prix: number
-          duree: number
-          couleur: string
-          actif: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          nom: string
-          description?: string | null
-          prix: number
-          duree: number
-          couleur?: string
-          actif?: boolean
-        }
-        Update: {
-          nom?: string
-          description?: string | null
-          prix?: number
-          duree?: number
-          couleur?: string
-          actif?: boolean
-        }
-      }
-      employes: {
-        Row: {
-          id: number
-          nom: string
-          prenom: string
-          email: string
-          telephone: string | null
-          specialites: string[]
-          actif: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          nom: string
-          prenom: string
-          email: string
-          telephone?: string | null
-          specialites?: string[]
-          actif?: boolean
-        }
-        Update: {
-          nom?: string
-          prenom?: string
-          email?: string
-          telephone?: string | null
-          specialites?: string[]
-          actif?: boolean
-        }
-      }
-      salles: {
-        Row: {
-          id: number
-          nom: string
-          capacite: number
-          equipements: string[]
-          actif: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          nom: string
-          capacite?: number
-          equipements?: string[]
-          actif?: boolean
-        }
-        Update: {
-          nom?: string
-          capacite?: number
-          equipements?: string[]
-          actif?: boolean
-        }
-      }
-      rendez_vous: {
-        Row: {
-          id: number
-          client_id: number
-          service_id: number
-          employe_id: number | null
-          salle_id: number | null
-          date_heure: string
-          duree: number
-          statut: string
-          notes: string | null
-          prix: number | null
-          google_event_id: string | null
-          rappel_envoye: boolean
-          confirmation_envoyee: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          client_id: number
-          service_id: number
-          employe_id?: number | null
-          salle_id?: number | null
-          date_heure: string
-          duree: number
-          statut?: string
-          notes?: string | null
-          prix?: number | null
-          google_event_id?: string | null
-          rappel_envoye?: boolean
-          confirmation_envoyee?: boolean
-        }
-        Update: {
-          client_id?: number
-          service_id?: number
-          employe_id?: number | null
-          salle_id?: number | null
-          date_heure?: string
-          duree?: number
-          statut?: string
-          notes?: string | null
-          prix?: number | null
-          google_event_id?: string | null
-          rappel_envoye?: boolean
-          confirmation_envoyee?: boolean
-        }
-      }
-      google_tokens: {
-        Row: {
-          id: number
-          user_id: string
-          access_token: string
-          refresh_token: string | null
-          expires_at: string
-          scope: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          user_id: string
-          access_token: string
-          refresh_token?: string | null
-          expires_at: string
-          scope: string
-        }
-        Update: {
-          user_id?: string
-          access_token?: string
-          refresh_token?: string | null
-          expires_at?: string
-          scope?: string
-        }
-      }
-    }
-  }
-}
+-- Table: services
+create table if not exists services (
+  id serial primary key,
+  categorie text,
+  description text,
+  dureeminutes int,
+  prix numeric,
+  employes_competents text,
+  salle_id int references salles(id),
+  actif boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Table: rendez_vous
+create table if not exists rendez_vous (
+  id serial primary key,
+  client_id int references clients(id),
+  service_id int references services(id),
+  employe_id int references employes(id),
+  salle_id int references salles(id),
+  date_heure timestamp not null,
+  duree int,
+  statut text default 'actif',
+  notes text,
+  prix numeric,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Table: produits
+create table if not exists produits (
+  id serial primary key,
+  nom text not null,
+  description text,
+  prix numeric,
+  actif boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+`;

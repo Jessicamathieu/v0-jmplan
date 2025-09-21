@@ -1,15 +1,10 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,8 +16,7 @@ import { CalendarIcon, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { DatabaseService } from "@/lib/database"
-import type { Client, Service, Employe, Salle } from "@/lib/database"
+import { DatabaseService, type Client, type Service, type Employe, type Salle } from "@/lib/database"
 import { useToast } from "@/hooks/use-toast"
 
 interface AddAppointmentDialogProps {
@@ -45,126 +39,86 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
     serviceId: "",
     employeId: "",
     salleId: "",
-    duration: "60",
+    duration: "",
     notes: "",
     time: "",
     prix: "",
   })
 
-  // Charger les données au montage
+  // Charger les données une seule fois quand la modal s’ouvre
   useEffect(() => {
-    if (open) {
-      loadData()
-    }
-  }, [open])
-
-  const loadData = async () => {
-    try {
-      const [clientsData, servicesData, employesData, sallesData] = await Promise.all([
-        DatabaseService.getClients(),
-        DatabaseService.getServices(),
-        DatabaseService.getEmployes(),
-        DatabaseService.getSalles(),
-      ])
-
-      setClients(clientsData)
-      setServices(servicesData)
-      setEmployes(employesData)
-      setSalles(sallesData)
-    } catch (error) {
-      console.error("Erreur lors du chargement des données:", error)
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données",
-        variant: "destructive",
+    if (!open) return
+    Promise.all([
+      DatabaseService.getClients(),
+      DatabaseService.getServices(),
+      DatabaseService.getEmployes(),
+      DatabaseService.getSalles(),
+    ])
+      .then(([c, s, e, sa]) => {
+        setClients(c)
+        setServices(s)
+        setEmployes(e)
+        setSalles(sa)
       })
-    }
-  }
+      .catch((error) => {
+        console.error("Erreur chargement données:", error)
+        toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" })
+      })
+  }, [open, toast])
 
-  // Mettre à jour la durée et le prix quand un service est sélectionné
+  // Auto-remplir durée, prix et salle quand un service est choisi
   useEffect(() => {
-    if (formData.serviceId) {
-      const selectedService = services.find((s) => s.id.toString() === formData.serviceId)
-      if (selectedService) {
-        setFormData((prev) => ({
-          ...prev,
-          duration: selectedService.duree.toString(),
-          prix: selectedService.prix.toString(),
-        }))
-      }
+    if (!formData.serviceId) return
+    const selected = services.find((s) => s.id.toString() === formData.serviceId)
+    if (selected) {
+      setFormData((prev) => ({
+        ...prev,
+        duration: selected.dureeminutes?.toString() || prev.duration,
+        prix: selected.prix?.toString() || prev.prix,
+        salleId: selected.salle_id?.toString() || prev.salleId,
+      }))
     }
   }, [formData.serviceId, services])
 
+  // Soumission formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!date || !formData.time || !formData.clientId || !formData.serviceId) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis",
-        variant: "destructive",
-      })
-      return
+      return toast({ title: "Erreur", description: "Veuillez remplir tous les champs requis", variant: "destructive" })
     }
 
     setLoading(true)
-
     try {
-      // Construire la date/heure complète
       const dateTime = new Date(date)
-      const [hours, minutes] = formData.time.split(":")
-      dateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0, 0)
+      const [h, m] = formData.time.split(":")
+      dateTime.setHours(Number(h), Number(m), 0, 0)
 
       const response = await fetch("/api/rendezvous/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          client_id: Number.parseInt(formData.clientId),
-          service_id: Number.parseInt(formData.serviceId),
-          employe_id: formData.employeId ? Number.parseInt(formData.employeId) : null,
-          salle_id: formData.salleId ? Number.parseInt(formData.salleId) : null,
+          client_id: Number(formData.clientId),
+          service_id: Number(formData.serviceId),
+          employe_id: formData.employeId ? Number(formData.employeId) : null,
+          salle_id: formData.salleId ? Number(formData.salleId) : null,
           date_heure: dateTime.toISOString(),
-          duree: Number.parseInt(formData.duration),
+          duree: Number(formData.duration),
           notes: formData.notes || null,
-          prix: formData.prix ? Number.parseFloat(formData.prix) : null,
+          prix: formData.prix ? Number(formData.prix) : null,
         }),
       })
 
       const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Erreur création RDV")
 
-      if (!response.ok) {
-        throw new Error(result.error || "Erreur lors de la création")
-      }
-
-      toast({
-        title: "Succès",
-        description: "Rendez-vous créé avec succès",
-      })
-
-      // Reset form
-      setFormData({
-        clientId: "",
-        serviceId: "",
-        employeId: "",
-        salleId: "",
-        duration: "60",
-        notes: "",
-        time: "",
-        prix: "",
-      })
+      toast({ title: "Succès", description: "Rendez-vous créé avec succès ✅" })
+      setFormData({ clientId: "", serviceId: "", employeId: "", salleId: "", duration: "", notes: "", time: "", prix: "" })
       setDate(undefined)
-
       onOpenChange(false)
       onAppointmentCreated?.()
     } catch (error) {
-      console.error("Erreur:", error)
-      toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Erreur lors de la création",
-        variant: "destructive",
-      })
+      console.error(error)
+      toast({ title: "Erreur", description: error instanceof Error ? error.message : "Erreur création RDV", variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -181,41 +135,27 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Client + Service */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="client">Client *</Label>
-              <Select
-                value={formData.clientId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, clientId: value }))}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un client" />
-                </SelectTrigger>
+            <div>
+              <Label>Client *</Label>
+              <Select value={formData.clientId} onValueChange={(v) => setFormData((p) => ({ ...p, clientId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id.toString()}>
-                      {client.prenom} {client.nom}
-                    </SelectItem>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="service">Service *</Label>
-              <Select
-                value={formData.serviceId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, serviceId: value }))}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un service" />
-                </SelectTrigger>
+            <div>
+              <Label>Service *</Label>
+              <Select value={formData.serviceId} onValueChange={(v) => setFormData((p) => ({ ...p, serviceId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir un service" /></SelectTrigger>
                 <SelectContent>
-                  {services.map((service) => (
-                    <SelectItem key={service.id} value={service.id.toString()}>
-                      {service.nom} ({service.duree}min - {service.prix}$)
+                  {services.map((s) => (
+                    <SelectItem key={s.id} value={s.id.toString()}>
+                      {s.description} ({s.dureeminutes}min – {s.prix}$)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -223,134 +163,76 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
             </div>
           </div>
 
+          {/* Date + Heure */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label>Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-                  >
+                  <Button variant="outline" className={cn("w-full justify-start", !date && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, "PPP", { locale: fr }) : "Sélectionner une date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  />
+                <PopoverContent>
+                  <Calendar mode="single" selected={date} onSelect={setDate} disabled={(d) => d < new Date()} />
                 </PopoverContent>
               </Popover>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="time">Heure *</Label>
-              <Input
-                id="time"
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
-                required
-              />
+            <div>
+              <Label>Heure *</Label>
+              <Input type="time" value={formData.time} onChange={(e) => setFormData((p) => ({ ...p, time: e.target.value }))} />
             </div>
           </div>
 
+          {/* Employé + Salle */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="employe">Employé</Label>
-              <Select
-                value={formData.employeId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, employeId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un employé" />
-                </SelectTrigger>
+            <div>
+              <Label>Employé</Label>
+              <Select value={formData.employeId} onValueChange={(v) => setFormData((p) => ({ ...p, employeId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir un employé" /></SelectTrigger>
                 <SelectContent>
-                  {employes.map((employe) => (
-                    <SelectItem key={employe.id} value={employe.id.toString()}>
-                      {employe.prenom} {employe.nom}
-                    </SelectItem>
+                  {employes.map((e) => (
+                    <SelectItem key={e.id} value={e.id.toString()}>{e.nom_employe}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="salle">Salle</Label>
-              <Select
-                value={formData.salleId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, salleId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une salle" />
-                </SelectTrigger>
+            <div>
+              <Label>Salle</Label>
+              <Select value={formData.salleId} onValueChange={(v) => setFormData((p) => ({ ...p, salleId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir une salle" /></SelectTrigger>
                 <SelectContent>
-                  {salles.map((salle) => (
-                    <SelectItem key={salle.id} value={salle.id.toString()}>
-                      {salle.nom} (Capacité: {salle.capacite})
-                    </SelectItem>
+                  {salles.map((s) => (
+                    <SelectItem key={s.id} value={s.id.toString()}>{s.description}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
+          {/* Durée + Prix */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="duration">Durée (minutes)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="15"
-                max="480"
-                step="15"
-                value={formData.duration}
-                onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
-              />
+            <div>
+              <Label>Durée (min)</Label>
+              <Input type="number" value={formData.duration} onChange={(e) => setFormData((p) => ({ ...p, duration: e.target.value }))} />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prix">Prix ($)</Label>
-              <Input
-                id="prix"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.prix}
-                onChange={(e) => setFormData((prev) => ({ ...prev, prix: e.target.value }))}
-              />
+            <div>
+              <Label>Prix ($)</Label>
+              <Input type="number" step="0.01" value={formData.prix} onChange={(e) => setFormData((p) => ({ ...p, prix: e.target.value }))} />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optionnel)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Notes sur le rendez-vous..."
-              value={formData.notes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-              rows={3}
-            />
+          {/* Notes */}
+          <div>
+            <Label>Notes</Label>
+            <Textarea value={formData.notes} onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))} rows={3} />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-              Annuler
-            </Button>
-            <Button type="submit" className="bg-gradient-to-r from-primary to-secondary" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création...
-                </>
-              ) : (
-                "Créer le RDV"
-              )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Annuler</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Création...</> : "Créer le RDV"}
             </Button>
           </DialogFooter>
         </form>

@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Users, Plus, Search, Mail, Phone, MapPin } from "lucide-react"
-import { getClients } from "@/lib/api-client"
-import type { Client } from "@/types"
+import { Card } from "@/components/ui/card"
+import { Badge, Mail, MapPin, Phone, Plus, Search, Users } from "lucide-react"
+import { getClients } from "@/lib/database"
+import type { Client } from "@/lib/database"
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -18,7 +17,27 @@ export default function ClientsPage() {
     const loadClients = async () => {
       try {
         const clientsData = await getClients()
-        setClients(clientsData)
+        // Map the API response to the Client type
+        const mappedClients = clientsData.map((c: any) => ({
+          id: c.client_id,
+          nom: c.nom,
+          prenom: c.prenom ?? "",
+          email: c.email ?? null,
+          telephone: c.telephone ?? null,
+          adresse: c.adresse ?? null,
+          date_naissance: c.date_naissance ?? null,
+          notes: c.notes ?? null,
+          points_fidelite: c.points_fidelite ?? 0,
+          actif: c.actif,
+          created_at: c.created_at ?? "",
+          updated_at: c.updated_at ?? "",
+          firstName: c.prenom ?? "",
+          lastName: c.nom ?? "",
+          phone: c.telephone ?? "",
+          city: c.ville ?? "",
+          postalCode: c.code_postal ?? "",
+        }))
+        setClients(mappedClients)
       } catch (error) {
         console.error("Erreur lors du chargement des clients:", error)
       } finally {
@@ -31,9 +50,9 @@ export default function ClientsPage() {
 
   const filteredClients = clients.filter(
     (client) =>
-      client.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      client.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.email ?? "").toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   if (loading) {
@@ -74,36 +93,36 @@ export default function ClientsPage() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Total Clients</div>
             <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             <div className="text-2xl font-bold text-primary">{clients.length}</div>
             <p className="text-xs text-muted-foreground">+2 ce mois-ci</p>
-          </CardContent>
+          </div>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nouveaux ce mois</CardTitle>
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Nouveaux ce mois</div>
             <Plus className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             <div className="text-2xl font-bold text-secondary">2</div>
             <p className="text-xs text-muted-foreground">+100% vs mois dernier</p>
-          </CardContent>
+          </div>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clients Actifs</CardTitle>
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Clients Actifs</div>
             <Users className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             <div className="text-2xl font-bold text-green-600">{clients.length}</div>
             <p className="text-xs text-muted-foreground">100% actifs</p>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
@@ -111,15 +130,15 @@ export default function ClientsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredClients.map((client) => (
           <Card key={client.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
+            <div>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
-                  {client.firstName} {client.lastName}
-                </CardTitle>
-                <Badge variant="outline">Actif</Badge>
+                <div className="text-lg">
+                  {client.prenom} {client.nom}
+                </div>
+                <span className="inline-block px-2 py-1 text-xs font-semibold border rounded border-primary text-primary bg-primary/10">Actif</span>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
                 {client.email}
@@ -140,7 +159,7 @@ export default function ClientsPage() {
                   RDV
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </Card>
         ))}
       </div>

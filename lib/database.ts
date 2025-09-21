@@ -1,220 +1,128 @@
-import { supabase } from "./supabase"
-import type { Database } from "./supabase"
+'use clients'
+import { createClient } from '@supabase/supabase-js'
 
-// Types pour les tables
-export type Client = Database["public"]["Tables"]["clients"]["Row"]
-export type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"]
-export type ClientUpdate = Database["public"]["Tables"]["clients"]["Update"]
+// Configuration de la connexion à la base de données Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+export type Client = {
+  id: number
+  nom: string
+  adresse: string | null
+  ville: string | null
+  province: string | null
+  codepostal: string | null
+  telephone: string | null
+  courriel: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
 
-export type Service = Database["public"]["Tables"]["services"]["Row"]
-export type ServiceInsert = Database["public"]["Tables"]["services"]["Insert"]
-export type ServiceUpdate = Database["public"]["Tables"]["services"]["Update"]
+export type Employe = {
+  id: number
+  nom_employe: string
+  initiales: string | null
+  couleur_secondaire: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
 
-export type RendezVous = Database["public"]["Tables"]["rendez_vous"]["Row"]
-export type RendezVousInsert = Database["public"]["Tables"]["rendez_vous"]["Insert"]
-export type RendezVousUpdate = Database["public"]["Tables"]["rendez_vous"]["Update"]
+export type Salle = {
+  id: number
+  description: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
 
-export type Employe = Database["public"]["Tables"]["employes"]["Row"]
-export type Salle = Database["public"]["Tables"]["salles"]["Row"]
-export type GoogleToken = Database["public"]["Tables"]["google_tokens"]["Row"]
+export type Service = {
+  id: number
+  categorie: string | null
+  description: string | null
+  dureeminutes: number
+  prix: number
+  employes_competents: string | null
+  salle_id: number | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
 
-// Fonctions utilitaires pour la base de données
-export class DatabaseService {
-  // Clients
+export type RendezVous = {
+  id: number
+  client_id: number
+  service_id: number
+  employe_id: number | null
+  salle_id: number | null
+  date_heure: string
+  duree: number
+  statut: string
+  notes: string | null
+  prix: number | null
+  created_at: string
+  updated_at: string
+}
+
+export type Produit = {
+  id: number
+  nom: string
+  description: string | null
+  prix: number
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+// Exporter la classe DatabaseService
+class DatabaseService {
+  static createClient(body: any) {
+    throw new Error("Method not implemented.")
+  }
+  static createClient(body: any) {
+    throw new Error("Method not implemented.")
+  }
   static async getClients() {
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("actif", true)
-      .order("nom", { ascending: true })
-
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.from('clients').select('*')
     if (error) throw error
-    return data
+    return data as Client[]
   }
 
-  static async createClient(client: ClientInsert) {
-    const { data, error } = await supabase.from("clients").insert(client).select().single()
-
-    if (error) throw error
-    return data
-  }
-
-  static async updateClient(id: number, updates: ClientUpdate) {
-    const { data, error } = await supabase.from("clients").update(updates).eq("id", id).select().single()
-
-    if (error) throw error
-    return data
-  }
-
-  static async deleteClient(id: number) {
-    const { error } = await supabase.from("clients").update({ actif: false }).eq("id", id)
-
-    if (error) throw error
-  }
-
-  // Services
   static async getServices() {
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("actif", true)
-      .order("nom", { ascending: true })
-
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.from('services').select('*')
     if (error) throw error
-    return data
+    return data as Service[]
   }
 
-  static async createService(service: ServiceInsert) {
-    const { data, error } = await supabase.from("services").insert(service).select().single()
-
-    if (error) throw error
-    return data
+  static async getRendezVous() {
+  const supabase = createClient(supabaseUrl, supabaseKey)
+  const { data, error } = await supabase.from('rendez_vous').select('*') // ✅ underscore comme SQL
+  if (error) throw error
+  return data as RendezVous[]
   }
 
-  // Rendez-vous
-  static async getRendezVous(startDate?: string, endDate?: string) {
-    let query = supabase
-      .from("rendez_vous")
-      .select(`
-        *,
-        client:clients(*),
-        service:services(*),
-        employe:employes(*),
-        salle:salles(*)
-      `)
-      .neq("statut", "annule")
-      .order("date_heure", { ascending: true })
-
-    if (startDate) {
-      query = query.gte("date_heure", startDate)
-    }
-    if (endDate) {
-      query = query.lte("date_heure", endDate)
-    }
-
-    const { data, error } = await query
-    if (error) throw error
-    return data
-  }
-
-  static async createRendezVous(rendezVous: RendezVousInsert) {
-    const { data, error } = await supabase
-      .from("rendez_vous")
-      .insert(rendezVous)
-      .select(`
-        *,
-        client:clients(*),
-        service:services(*),
-        employe:employes(*),
-        salle:salles(*)
-      `)
-      .single()
-
-    if (error) throw error
-    return data
-  }
-
-  static async updateRendezVous(id: number, updates: RendezVousUpdate) {
-    const { data, error } = await supabase
-      .from("rendez_vous")
-      .update(updates)
-      .eq("id", id)
-      .select(`
-        *,
-        client:clients(*),
-        service:services(*),
-        employe:employes(*),
-        salle:salles(*)
-      `)
-      .single()
-
-    if (error) throw error
-    return data
-  }
-
-  static async deleteRendezVous(id: number) {
-    const { error } = await supabase.from("rendez_vous").update({ statut: "annule" }).eq("id", id)
-
-    if (error) throw error
-  }
-
-  // Employés et salles
   static async getEmployes() {
-    const { data, error } = await supabase
-      .from("employes")
-      .select("*")
-      .eq("actif", true)
-      .order("nom", { ascending: true })
-
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.from('employes').select('*')
     if (error) throw error
-    return data
+    return data as Employe[]
   }
 
   static async getSalles() {
-    const { data, error } = await supabase
-      .from("salles")
-      .select("*")
-      .eq("actif", true)
-      .order("nom", { ascending: true })
-
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.from('salles').select('*')
     if (error) throw error
-    return data
-  }
-
-  // Google Tokens
-  static async saveGoogleTokens(
-    userId: string,
-    tokens: {
-      access_token: string
-      refresh_token?: string
-      expires_at: string
-      scope: string
-    },
-  ) {
-    const { data, error } = await supabase
-      .from("google_tokens")
-      .upsert({
-        user_id: userId,
-        ...tokens,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-    return data
-  }
-
-  static async getGoogleTokens(userId: string) {
-    const { data, error } = await supabase.from("google_tokens").select("*").eq("user_id", userId).single()
-
-    if (error && error.code !== "PGRST116") throw error
-    return data
-  }
-
-  // Import en batch
-  static async batchInsertClients(clients: ClientInsert[]) {
-    const { data, error } = await supabase
-      .from("clients")
-      .upsert(clients, {
-        onConflict: "email",
-        ignoreDuplicates: false,
-      })
-      .select()
-
-    if (error) throw error
-    return data
-  }
-
-  static async batchInsertServices(services: ServiceInsert[]) {
-    const { data, error } = await supabase
-      .from("services")
-      .upsert(services, {
-        onConflict: "nom",
-        ignoreDuplicates: false,
-      })
-      .select()
-
-    if (error) throw error
-    return data
+    return data as Salle[]
   }
 }
+
+export { DatabaseService }
+
+
+export const getClients = () => DatabaseService.getClients()
+export const getServices = () => DatabaseService.getServices()
+export const getRendezVous = () => DatabaseService.getRendezVous()
+export const getEmployes = () => DatabaseService.getEmployes()
+export const getSalles = () => DatabaseService.getSalles()
+
