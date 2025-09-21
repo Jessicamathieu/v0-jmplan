@@ -45,7 +45,7 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
     prix: "",
   })
 
-  // Charger les données une seule fois quand la modal s’ouvre
+  // Charger les données
   useEffect(() => {
     if (!open) return
     Promise.all([
@@ -66,7 +66,7 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
       })
   }, [open, toast])
 
-  // Auto-remplir durée, prix et salle quand un service est choisi
+  // Auto-remplir durée/prix/salle selon service
   useEffect(() => {
     if (!formData.serviceId) return
     const selected = services.find((s) => s.id.toString() === formData.serviceId)
@@ -80,7 +80,14 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
     }
   }, [formData.serviceId, services])
 
-  // Soumission formulaire
+  // Génération des créneaux de 15 minutes
+  const timeSlots = Array.from({ length: 24 * 4 }, (_, i) => {
+    const h = Math.floor(i / 4).toString().padStart(2, "0")
+    const m = ((i % 4) * 15).toString().padStart(2, "0")
+    return `${h}:${m}`
+  })
+
+  // Soumission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date || !formData.time || !formData.clientId || !formData.serviceId) {
@@ -143,7 +150,7 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
                 <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>{c.nom}</SelectItem>
+                    <SelectItem key={c.id} value={c.id.toString()}> {c.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -154,9 +161,7 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
                 <SelectTrigger><SelectValue placeholder="Choisir un service" /></SelectTrigger>
                 <SelectContent>
                   {services.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      {s.description} ({s.dureeminutes}min – {s.prix}$)
-                    </SelectItem>
+                    <SelectItem key={s.id} value={s.id.toString()}>{s.description}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -175,13 +180,20 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent>
-                  <Calendar mode="single" selected={date} onSelect={setDate} disabled={(d) => d < new Date()} />
+                  <Calendar mode="single" locale={fr} selected={date} onSelect={setDate} disabled={(d) => d < new Date()} />
                 </PopoverContent>
               </Popover>
             </div>
             <div>
               <Label>Heure *</Label>
-              <Input type="time" value={formData.time} onChange={(e) => setFormData((p) => ({ ...p, time: e.target.value }))} />
+              <Select value={formData.time} onValueChange={(v) => setFormData((p) => ({ ...p, time: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir une heure" /></SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -193,7 +205,7 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
                 <SelectTrigger><SelectValue placeholder="Choisir un employé" /></SelectTrigger>
                 <SelectContent>
                   {employes.map((e) => (
-                    <SelectItem key={e.id} value={e.id.toString()}>{e.nom_employe}</SelectItem>
+                    <SelectItem key={e.id} value={e.id.toString()}>{e.prenom} {e.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -215,11 +227,11 @@ export function AddAppointmentDialog({ open, onOpenChange, onAppointmentCreated 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Durée (min)</Label>
-              <Input type="number" value={formData.duration} onChange={(e) => setFormData((p) => ({ ...p, duration: e.target.value }))} />
+              <Input type="number" value={formData.duration} readOnly />
             </div>
             <div>
               <Label>Prix ($)</Label>
-              <Input type="number" step="0.01" value={formData.prix} onChange={(e) => setFormData((p) => ({ ...p, prix: e.target.value }))} />
+              <Input type="number" step="0.01" value={formData.prix} readOnly />
             </div>
           </div>
 
