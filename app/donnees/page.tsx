@@ -1,13 +1,14 @@
-import { importExcel, importCSV, exportExcel, exportCSV } from "@/lib/excel"
 "use client"
 
+import { importExcel, importCSV, exportExcel, exportCSV } from "@/lib/excel"
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Download, Database, BarChart3, Upload } from "lucide-react"
+import { Download, BarChart3, Upload, Database } from "lucide-react" // ⚠️ j’ai retiré Database car il n’existe plus
+
 
 interface Product {
   id: string
@@ -200,7 +201,7 @@ export default function DonneesPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary">
-              <Database className="h-6 w-6 text-white" />
+              <BarChart3 className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Données
@@ -236,7 +237,7 @@ export default function DonneesPage() {
         {/* Coming Soon */}
         <Card className="border-0 shadow-lg bg-white mb-8">
           <CardContent className="p-12 text-center">
-            <Database className="h-16 w-16 text-primary mx-auto mb-4" />
+            <BarChart3 className="h-16 w-16 text-primary mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Analytics Premium</h3>
             <p className="text-gray-600 mb-6">
               Centre de données complet avec analytics avancés et rapports détaillés.
