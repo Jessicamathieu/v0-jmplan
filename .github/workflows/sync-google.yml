@@ -1,14 +1,11 @@
 name: Google Calendar Sync
 on:
   schedule:
-    - cron: "0 * * * *"   # Toutes les heures
-  workflow_dispatch: {}
+    - cron: "0 * * * *" # toutes les heures
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Appel de l'endpoint /api/google/sync
-        run: |
-          curl -sS -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SYNC_TOKEN }}" \
-            "${{ secrets.APP_BASE_URL }}/api/google/sync"
+      - uses: actions/checkout@v4
+      - run: curl -X POST ${{ secrets.APP_BASE_URL }}/api/google/sync \
+          -H "Authorization: Bearer ${{ secrets.CRON_SYNC_TOKEN }}"

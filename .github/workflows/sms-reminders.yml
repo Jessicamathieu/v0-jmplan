@@ -1,14 +1,13 @@
 name: SMS Reminders
 on:
   schedule:
-    - cron: "0 12 * * *"  # Tous les jours 12:00 UTC
-  workflow_dispatch: {}
+    - cron: "0 12 * * *" # tous les jours à midi
 jobs:
-  remind:
+  sms:
     runs-on: ubuntu-latest
     steps:
-      - name: Envoi rappel générique (exemple)
-        run: |
-          curl -sS -X POST "${{ secrets.APP_BASE_URL }}/api/sms/send" \
+      - uses: actions/checkout@v4
+      - run: |
+          curl -X POST ${{ secrets.APP_BASE_URL }}/api/sms/send \
             -H "Content-Type: application/json" \
-            -d '{"to":"${{ secrets.TEST_SMS_TO }}","message":"Rappel: vous avez un rendez-vous aujourd’hui. Répondez OUI pour confirmer."}'
+            -d '{"to":"${{ secrets.TEST_SMS_TO }}","message":"Rappel : vous avez un rendez-vous aujourd’hui."}'
