@@ -27,28 +27,36 @@ export class DatabaseService {
       .select("*")
       .eq("actif", true)
       .order("nom", { ascending: true })
-
     if (error) throw error
     return data
   }
 
   static async createClient(client: ClientInsert) {
-    const { data, error } = await supabase.from("clients").insert(client).select().single()
-
+    const { data, error } = await supabase
+      .from("clients")
+      .insert(client)
+      .select()
+      .single()
     if (error) throw error
     return data
   }
 
   static async updateClient(id: number, updates: ClientUpdate) {
-    const { data, error } = await supabase.from("clients").update(updates).eq("id", id).select().single()
-
+    const { data, error } = await supabase
+      .from("clients")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single()
     if (error) throw error
     return data
   }
 
   static async deleteClient(id: number) {
-    const { error } = await supabase.from("clients").update({ actif: false }).eq("id", id)
-
+    const { error } = await supabase
+      .from("clients")
+      .update({ actif: false })
+      .eq("id", id)
     if (error) throw error
   }
 
@@ -59,16 +67,37 @@ export class DatabaseService {
       .select("*")
       .eq("actif", true)
       .order("nom", { ascending: true })
-
     if (error) throw error
     return data
   }
 
   static async createService(service: ServiceInsert) {
-    const { data, error } = await supabase.from("services").insert(service).select().single()
-
+    const { data, error } = await supabase
+      .from("services")
+      .insert(service)
+      .select()
+      .single()
     if (error) throw error
     return data
+  }
+
+  static async updateService(id: number, updates: ServiceUpdate) {
+    const { data, error } = await supabase
+      .from("services")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+
+  static async deleteService(id: number) {
+    const { error } = await supabase
+      .from("services")
+      .update({ actif: false })
+      .eq("id", id)
+    if (error) throw error
   }
 
   // Rendez-vous
@@ -109,7 +138,6 @@ export class DatabaseService {
         salle:salles(*)
       `)
       .single()
-
     if (error) throw error
     return data
   }
@@ -127,36 +155,36 @@ export class DatabaseService {
         salle:salles(*)
       `)
       .single()
-
     if (error) throw error
     return data
   }
 
   static async deleteRendezVous(id: number) {
-    const { error } = await supabase.from("rendez_vous").update({ statut: "annule" }).eq("id", id)
-
+    const { error } = await supabase
+      .from("rendez_vous")
+      .update({ statut: "annule" })
+      .eq("id", id)
     if (error) throw error
   }
 
-  // Employés et salles
+  // Employés
   static async getEmployes() {
     const { data, error } = await supabase
       .from("employes")
       .select("*")
       .eq("actif", true)
       .order("nom", { ascending: true })
-
     if (error) throw error
     return data
   }
 
+  // Salles
   static async getSalles() {
     const { data, error } = await supabase
       .from("salles")
       .select("*")
       .eq("actif", true)
       .order("nom", { ascending: true })
-
     if (error) throw error
     return data
   }
@@ -169,7 +197,7 @@ export class DatabaseService {
       refresh_token?: string
       expires_at: string
       scope: string
-    },
+    }
   ) {
     const { data, error } = await supabase
       .from("google_tokens")
@@ -179,14 +207,16 @@ export class DatabaseService {
       })
       .select()
       .single()
-
     if (error) throw error
     return data
   }
 
   static async getGoogleTokens(userId: string) {
-    const { data, error } = await supabase.from("google_tokens").select("*").eq("user_id", userId).single()
-
+    const { data, error } = await supabase
+      .from("google_tokens")
+      .select("*")
+      .eq("user_id", userId)
+      .single()
     if (error && error.code !== "PGRST116") throw error
     return data
   }
@@ -200,7 +230,6 @@ export class DatabaseService {
         ignoreDuplicates: false,
       })
       .select()
-
     if (error) throw error
     return data
   }
@@ -213,7 +242,6 @@ export class DatabaseService {
         ignoreDuplicates: false,
       })
       .select()
-
     if (error) throw error
     return data
   }
