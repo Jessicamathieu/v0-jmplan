@@ -1,6 +1,9 @@
 import { supabase } from "./supabase"
 import type { Database } from "./supabase"
 
+// Export supabase client for direct use
+export { supabase }
+
 // Types pour les tables
 export type Client = Database["public"]["Tables"]["clients"]["Row"]
 export type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"]
