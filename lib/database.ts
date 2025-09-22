@@ -221,3 +221,10 @@ export class DatabaseService {
     return data
   }
 }
+export const getClients = DatabaseService.getClients
+
+//export const getClients = DatabaseService.getClients.bind(DatabaseService)
+export const getServices = DatabaseService.getServices.bind(DatabaseService)
+export const getRendezVous = DatabaseService.getRendezVous.bind(DatabaseService)
+export const getEmployes = DatabaseService.getEmployes.bind(DatabaseService)
+export const getSalles = DatabaseService.getSalles.bind(DatabaseService)

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { ReactNode } from "react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co"
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
@@ -49,6 +50,8 @@ export type Database = {
       }
       services: {
         Row: {
+          salle_id: any
+          dureeminutes: any
           id: number
           nom: string
           description: string | null
@@ -107,6 +110,7 @@ export type Database = {
       }
       salles: {
         Row: {
+          description: ReactNode
           id: number
           nom: string
           capacite: number

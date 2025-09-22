@@ -60,6 +60,7 @@
     "node-fetch": "latest",
     "papaparse": "^5.5.3",
     "react": "^18.3.1",
+    "react-datepicker": "^8.7.0",
     "react-day-picker": "latest",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.63.0",
@@ -70,6 +71,7 @@
     "swr": "^2.3.6",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "twilio": "^5.10.0",
     "vaul": "^0.9.9",
     "xlsx": "latest",
     "zod": "^3.25.76"
